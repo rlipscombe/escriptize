@@ -1,0 +1,22 @@
+#!/usr/bin/env escript
+
+main(Args) ->
+    {OutputPath, InputPaths} = parse_args(Args),
+    {ok, ZipBin} = create_zip(InputPaths),
+
+    Sections = [shebang,
+                {emu_args, "-pa ebin"},
+                {archive, ZipBin}],
+    {ok, Bin} = escript:create('binary', Sections),
+    ok = file:write_file(OutputPath, Bin).
+
+create_zip(Paths) ->
+    Files = lists:map(fun(Path) ->
+                              {ok, Bin} = file:read_file(Path),
+                              {Path, Bin}
+                      end, Paths),
+    {ok, {"mem", ZipBin}} = zip:create("mem", Files, [memory]),
+    {ok, ZipBin}.
+
+parse_args([OutputPath | Rest] = _Args) ->
+    {OutputPath, Rest}.
