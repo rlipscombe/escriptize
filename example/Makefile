@@ -1,15 +1,9 @@
-ERLS := $(wildcard src/*.erl)
-BEAMS := $(ERLS:src/%.erl=ebin/%.beam)
+REBAR ?= rebar
 
-ebin/%.beam: src/%.erl
-	erlc -o ebin $<
-
-example: ebin $(BEAMS)
+top:
+	$(REBAR) get-deps compile
 	../escriptize example
 
-ebin:
-	mkdir -p ebin
-
 clean:
-	-rm $(BEAMS)
+	$(REBAR) clean
 	-rm example

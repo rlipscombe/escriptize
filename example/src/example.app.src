@@ -1,0 +1,4 @@
+{application, example,
+ [
+  {vsn, "1"}
+ ]}.
