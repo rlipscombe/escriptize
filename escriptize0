@@ -1,0 +1,40 @@
+#!/usr/bin/env escript
+
+%% @doc In order to support binary dependencies in your escript, we need to
+%% embed a bootstrap module that knows how to unpack your binary dependencies.
+%%
+%% This means that the 'escriptize' script needs, itself, to include that
+%% module.
+%%
+%% Which means that we need a way to 'escriptize' our 'escriptize' script.
+%%
+%% That's done by _this_ 'escriptize0' script.
+%%
+%% Is that meta enough for you?
+%%
+main([]) ->
+    io:format("./escriptize0 escriptize~n"), halt(1);
+
+main([OutputPath] = _Args) ->
+    Main = OutputPath,
+    InputPaths = [{filename:join([Main, F]), F}
+                  || F <- filelib:wildcard("ebin/*.beam")],
+    ZipEntries = create_zip_entries(InputPaths),
+    {ok, ZipBin} = create_zip(ZipEntries),
+
+    EmuArgs = io_lib:format("-pa ~s/ebin", [Main]),
+    Sections = [shebang,
+                {emu_args, EmuArgs},
+                {archive, ZipBin}],
+    {ok, Bin} = escript:create('binary', Sections),
+    ok = file:write_file(OutputPath, Bin).
+
+create_zip_entries(InputPaths) ->
+    lists:map(fun({Path, InputPath}) ->
+                      {ok, Bin} = file:read_file(InputPath),
+                      {Path, Bin}
+              end, InputPaths).
+
+create_zip(ZipEntries) ->
+    {ok, {"mem", ZipBin}} = zip:create("mem", ZipEntries, [memory]),
+    {ok, ZipBin}.

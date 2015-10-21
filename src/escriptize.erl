@@ -1,6 +1,10 @@
-#!/usr/bin/env escript
+-module(escriptize).
+-export([main/1]).
 
-%% ./escriptize output
+main([]) ->
+    io:format("./escriptize output~n"),
+    halt(1);
+
 main([OutputPath] = _Args) ->
     Main = OutputPath,
     % We need specific paths in the ZIP file:
