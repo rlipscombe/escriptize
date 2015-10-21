@@ -1,6 +1,8 @@
 -module(escriptize).
 -export([main/1]).
 
+-include_lib("kernel/include/file.hrl").
+
 main([]) ->
     io:format("./escriptize output~n"),
     halt(1);
@@ -30,7 +32,9 @@ main([OutputPath] = _Args) ->
                 {emu_args, EmuArgs},
                 {archive, ZipBin}],
     {ok, Bin} = escript:create('binary', Sections),
-    ok = file:write_file(OutputPath, Bin).
+    ok = file:write_file(OutputPath, Bin),
+    {ok, #file_info{mode = Mode}} = file:read_file_info(OutputPath),
+    ok = file:change_mode(OutputPath, Mode bor 8#00111).
 
 create_zip(InputPaths) ->
     Files = lists:map(fun({Path, InputPath}) ->
