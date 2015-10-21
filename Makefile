@@ -5,6 +5,7 @@ ebin/%.beam: src/%.erl
 	erlc -o ebin $<
 
 top: escriptize
+	make -C example
 
 ebin:
 	mkdir -p ebin
@@ -14,5 +15,6 @@ escriptize: ebin $(BEAMS) escriptize0
 	chmod +x ./escriptize
 
 clean:
+	make -C example clean
 	-rm $(BEAMS)
 	-rm escriptize
