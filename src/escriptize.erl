@@ -17,14 +17,12 @@ main([OutputPath] = _Args) ->
     InputPaths0 = [{filename:join([Main, F]), F}
                    || F <- filelib:wildcard("ebin/*.beam")],
 
-    % Then we need to add the deps, e.g.,
-    %   {"mochijson2/ebin/mochijson.beam", "deps/mochijson2/ebin/mochijson2.beam"}
-    Deps = filelib:wildcard("*", "deps"),
+    % Then we need to add the deps, excluding ourselves, in case we're in the
+    % deps directory.
+    Deps = filelib:wildcard("*", "deps") -- ["escriptize"],
     InputPaths1 = lists:flatmap(
                    fun(Dep) ->
-                           DepDir = filename:join("deps", Dep),
-                           [{filename:join(Dep, F), filename:join(DepDir, F)}
-                            || F <- filelib:wildcard("ebin/*.beam", DepDir) ++ filelib:wildcard("priv/*", DepDir)]
+                           get_dep_entries(Dep)
                    end, Deps),
 
     % We need to inject the entry point; lift it from ourselves:
@@ -43,6 +41,14 @@ main([OutputPath] = _Args) ->
     ok = file:write_file(OutputPath, Bin),
     {ok, #file_info{mode = Mode}} = file:read_file_info(OutputPath),
     ok = file:change_mode(OutputPath, Mode bor 8#00111).
+
+% Search deps/Dep/ebin and deps/Dep/priv for files to include.
+% Transform them to zip entries, e.g.:
+%   {"mochijson2/ebin/mochijson.beam", "deps/mochijson2/ebin/mochijson2.beam"}
+get_dep_entries(Dep) ->
+    DepDir = filename:join("deps", Dep),
+    [{filename:join(Dep, F), filename:join(DepDir, F)}
+     || F <- filelib:wildcard("ebin/*.beam", DepDir) ++ filelib:wildcard("priv/*", DepDir)].
 
 create_zip_entries(InputPaths) ->
     lists:map(fun({Path, InputPath}) ->
